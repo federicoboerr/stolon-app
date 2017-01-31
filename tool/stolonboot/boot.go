@@ -23,13 +23,13 @@ import (
 	"github.com/gravitational/trace"
 )
 
-func bootCluster(sentinels int, rpc int, password string) error {
-	err := createSentinels(sentinels)
+func bootCluster(sentinels int, rpc int, password string, namespace string) error {
+	err := createSentinels(sentinels, namespace)
 	if err != nil {
 		return trace.Wrap(err)
 	}
 
-	err = createSecret(password)
+	err = createSecret(password, namespace)
 	if err != nil {
 		return trace.Wrap(err)
 	}
@@ -40,7 +40,7 @@ func bootCluster(sentinels int, rpc int, password string) error {
 	}
 
 	if rpc > 0 {
-		err = createRPC(rpc)
+		err = createRPC(rpc, namespace)
 		if err != nil {
 			return trace.Wrap(err)
 		}
@@ -54,7 +54,7 @@ func bootCluster(sentinels int, rpc int, password string) error {
 	return nil
 }
 
-func createSentinels(sentinels int) error {
+func createSentinels(sentinels int, namespace string) error {
 	log.Infof("creating sentinels")
 	out, err := rigging.FromFile(rigging.ActionCreate, "/var/lib/gravity/resources/sentinel.yaml")
 	log.Infof("cmd output: %s", string(out))
@@ -62,15 +62,15 @@ func createSentinels(sentinels int) error {
 		return trace.Wrap(err)
 	}
 
-	if err = rigging.ScaleReplicationController("stolon-sentinel", sentinels, 120); err != nil {
+	if err = rigging.ScaleReplicationController(namespace, "stolon-sentinel", sentinels, 120); err != nil {
 		return trace.Wrap(err)
 	}
 	return nil
 }
 
-func createSecret(password string) error {
+func createSecret(password string, namespace string) error {
 	log.Infof("creating secret")
-	out, err := rigging.FromStdIn(rigging.ActionCreate, generateSecret(password))
+	out, err := rigging.FromStdIn(rigging.ActionCreate, generateSecret(password, namespace))
 	if err != nil && !strings.Contains(string(out), "already exists") {
 		return trace.Wrap(err)
 	}
@@ -89,7 +89,7 @@ func createKeepers() error {
 	return nil
 }
 
-func createRPC(rpc int) error {
+func createRPC(rpc int, namespace string) error {
 	log.Infof("creating rpc")
 	out, err := rigging.FromFile(rigging.ActionCreate, "/var/lib/gravity/resources/rpc.yaml")
 	log.Infof("cmd output: %s", string(out))
@@ -97,7 +97,7 @@ func createRPC(rpc int) error {
 		return trace.Wrap(err)
 	}
 
-	if err = rigging.ScaleReplicationController("stolon-rpc", rpc, 60); err != nil {
+	if err = rigging.ScaleReplicationController(namespace, "stolon-rpc", rpc, 60); err != nil {
 		return trace.Wrap(err)
 	}
 
@@ -115,8 +115,7 @@ func createUtils() error {
 	return nil
 }
 
-
-func generateSecret(password string) string {
+func generateSecret(password string, namespace string) string {
 	encodedPassword := base64.StdEncoding.EncodeToString([]byte(password))
 	template := `
 ---
@@ -124,6 +123,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: stolon
+  namespace: ` + namespace + `
 type: Opaque
 data:
   password: ` + encodedPassword + `

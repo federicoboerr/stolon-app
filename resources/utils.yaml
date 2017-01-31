@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: stolon-utils
-  namespace: default
+  namespace: kube-system
 spec:
   replicas: 1
   template:
@@ -18,6 +18,8 @@ spec:
       - name: stolon-utils
         image: apiserver:5000/stolon-utils:latest
         env:
+          - name: STOLON_KUBERNETES_NAMESPACE
+            value: "kube-system"
           - name: STOLON_USERNAME
             value: "stolon"
           - name: STOLON_PASSWORDFILE

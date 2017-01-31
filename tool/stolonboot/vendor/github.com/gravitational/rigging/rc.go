@@ -23,8 +23,8 @@ import (
 	"github.com/gravitational/trace"
 )
 
-func GetRCPods(name string) (*PodList, error) {
-	cmd := KubeCommand("get", "pods", "-l", fmt.Sprintf("name=%s", name), "-o", "json")
+func GetRCPods(namespace string, name string) (*PodList, error) {
+	cmd := KubeCommand("--namespace", namespace, "get", "pods", "-l", fmt.Sprintf("name=%s", name), "-o", "json")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, trace.Wrap(err)
@@ -39,21 +39,21 @@ func GetRCPods(name string) (*PodList, error) {
 	return &pods, nil
 }
 
-func ScaleReplicationController(name string, replicas int, tries int) error {
-	err := WaitForRCPods(name, 1, time.Second, tries)
+func ScaleReplicationController(namespace string, name string, replicas int, tries int) error {
+	err := WaitForRCPods(namespace, name, 1, time.Second, tries)
 	if err != nil {
 		return trace.Wrap(err)
 	}
 
 	for i := 1; i < replicas; i++ {
-		cmd := KubeCommand("scale", fmt.Sprintf("--replicas=%d", i+1), fmt.Sprintf("rc/%s", name))
+		cmd := KubeCommand("--namespace", namespace, "scale", fmt.Sprintf("--replicas=%d", i+1), fmt.Sprintf("rc/%s", name))
 		out, err := cmd.CombinedOutput()
 		log.Infof("cmd output: %s", string(out))
 		if err != nil {
 			return trace.Wrap(err)
 		}
 
-		err = WaitForRCPods(name, i+1, time.Second, tries)
+		err = WaitForRCPods(namespace, name, i+1, time.Second, tries)
 		if err != nil {
 			return trace.Wrap(err)
 		}
@@ -62,8 +62,8 @@ func ScaleReplicationController(name string, replicas int, tries int) error {
 	return nil
 }
 
-func GetReplicationController(name string) (*ReplicationController, error) {
-	cmd := KubeCommand("get", fmt.Sprintf("rc/%s", name), "-o", "json")
+func GetReplicationController(namespace string, name string) (*ReplicationController, error) {
+	cmd := KubeCommand("--namespace", namespace, "get", fmt.Sprintf("rc/%s", name), "-o", "json")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, trace.Wrap(err)
@@ -78,9 +78,9 @@ func GetReplicationController(name string) (*ReplicationController, error) {
 	return &rc, nil
 }
 
-func WaitForRCPods(rcName string, desired int, delay time.Duration, tries int) error {
+func WaitForRCPods(namespace string, rcName string, desired int, delay time.Duration, tries int) error {
 	for i := 0; i < tries; i++ {
-		pods, err := GetRCPods(rcName)
+		pods, err := GetRCPods(namespace, rcName)
 		if err != nil {
 			return trace.Wrap(err)
 		}

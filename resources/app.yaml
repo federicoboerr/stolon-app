@@ -1,32 +1,36 @@
-apiVersion: v1
+apiVersion: v2
 kind: Application
 metadata:
   repository: gravitational.io
   name: stolon-app
   resourceVersion: 0.0.1
-  namespace: default
-base: gravitational.io/k8s-onprem:0.0.0+latest
+  namespace: kube-system
+base: gravitational.io/kubernetes:0.0.0+latest
 dependencies:
   apps:
     - gravitational.io/cluster-ssl-app:0.0.0+latest
 service_labels:
   stolon-postgres: "yes"
 installer:
-  provisioners:
-    virsh:
-      variables:
-        ram_mb: 2500
-        devices:
-          - device: vdb
-            mb: 8000
-          - device: vdc
-            mb: 4100
-      commands:
-        - 'sudo hostname {{ .server.hostname }}'
-        - 'echo $(netstat -rn | grep UG | awk ''{print $2}'') {{ .variables.system.teleport_proxy_address }} | sudo tee -a /etc/hosts'
-        - 'sudo mkfs.ext4 /dev/vdc'
-        - 'sudo mkdir -p /var/lib/data/stolon && sudo mount /dev/vdc /var/lib/data/stolon'
-        - 'curl --tlsv1.2 {{if .variables.system.devmode}}--insecure{{end}} "{{ .variables.system.ops_url }}/{{ .variables.system.token }}/auto?docker_device=vdb&mount=stolon-data:/var/lib/data/stolon" | sudo bash'
+  providers:
+    onprem:
+      docker:
+        backend: overlay
+      provisioners:
+        virsh:
+          variables:
+            ram_mb: 2500
+            devices:
+              - device: vdb
+                mb: 10500
+              - device: vdc
+                mb: 10500
+          commands:
+            - 'sudo hostname {{ .server.hostname }}'
+            - 'echo $(netstat -rn | grep UG | awk ''{print $2}'') {{ .variables.system.teleport_proxy_address }} | sudo tee -a /etc/hosts'
+            - 'sudo mkfs.ext4 /dev/vdc'
+            - 'sudo mkdir -p /var/lib/data/stolon && sudo mount /dev/vdc /var/lib/data/stolon'
+            - 'curl --tlsv1.2 {{if .variables.system.devmode}}--insecure{{end}} "{{ .variables.system.ops_url }}/{{ .variables.system.token }}/auto?docker_device=vdb&mount=stolon-data:/var/lib/data/stolon" | sudo bash'
   servers:
     node:
       cpu:

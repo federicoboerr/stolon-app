@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: stolon-rpc
-  namespace: default
+  namespace: kube-system
   labels:
     stolon-rpc: "yes"
 spec:
@@ -19,7 +19,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: stolon-rpc
-  namespace: default
+  namespace: kube-system
 spec:
   replicas: 1
   template:

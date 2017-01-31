@@ -1,8 +1,8 @@
 #!/bin/sh
 
-/usr/local/bin/stolonboot -sentinels 1 -rpc 1
+/usr/local/bin/stolonboot -sentinels 1 -rpc 1 -namespace kube-system
 
-if [[ $(kubectl get nodes -l stolon-keeper=yes -o name | wc -l) -ge 3 ]]
+if [[ $(kubectl --namespace=kube-system get nodes -l stolon-keeper=yes -o name | wc -l) -ge 3 ]]
 then
-    kubectl scale --replicas=3 deployment stolon-sentinel
+    kubectl --namespace=kube-system scale --replicas=3 deployment stolon-sentinel
 fi

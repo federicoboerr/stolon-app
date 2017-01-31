@@ -18,9 +18,9 @@ function setup_cluster_ca() {
 
 	if [ -f /usr/local/bin/kubectl ]; then
 		mkdir -p /usr/share/ca-certificates/extra
-		kubectl get secret cluster-ca
+		kubectl --namespace=kube-system get secret cluster-ca
 		if [ $? -eq 0 ]; then
-			kubectl get secret cluster-ca -o yaml|grep ca.pem|awk '{print $2}'|base64 -d > /usr/local/share/ca-certificates/cluster.crt
+			kubectl --namespace=kube-system get secret cluster-ca -o yaml|grep ca.pem|awk '{print $2}'|base64 -d > /usr/local/share/ca-certificates/cluster.crt
 			update-ca-certificates
 		fi
 	fi

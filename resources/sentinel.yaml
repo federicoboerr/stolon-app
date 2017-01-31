@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: stolon-sentinel
-  namespace: default
+  namespace: kube-system
 spec:
   replicas: 1
   template:
@@ -37,7 +37,7 @@ spec:
           - name: STSENTINEL_DEBUG
             value: "false"
           - name: STSENTINEL_KUBERNETES_NAMESPACE
-            value: "default"
+            value: "kube-system"
           - name: STSENTINEL_PORT
             value: "6431"
           - name: STSENTINEL_KEEPER_PORT
