@@ -38,6 +38,14 @@ IMPORT_OPTIONS := --vendor \
 		--registry-url=apiserver:5000 \
 		$(IMPORT_IMAGE_OPTIONS)
 
+BUILD_OPTIONS := --name=$(NAME) \
+		--version=$(VERSION) \
+		--repository=$(OPS_URL) \
+		--glob=**/*.yaml \
+		--ignore=dev \
+		--ignore=images \
+		$(IMPORT_IMAGE_OPTIONS)
+
 BUILD_DIR := build
 TARBALL := $(BUILD_DIR)/stolon-app.tar.gz
 
@@ -57,18 +65,19 @@ import: images
 	-gravity app delete --ops-url=$(OPS_URL) $(REPOSITORY)/$(NAME):$(VERSION) --force --insecure $(EXTRA_GRAVITY_OPTIONS)
 	gravity app import $(IMPORT_OPTIONS) $(EXTRA_GRAVITY_OPTIONS) .
 
-.PHONY: export
-export: $(TARBALL)
+.PHONY: tele-build
+tele-build: $(BUILD_DIR) images
+	tele build $(BUILD_OPTIONS) resources/app.yaml -o $(TARBALL)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(TARBALL): import $(BUILD_DIR)
-	gravity package export $(REPOSITORY)/$(NAME):$(VERSION) $(TARBALL) $(EXTRA_GRAVITY_OPTIONS)
+$(TARBALL): tele-build
 
 .PHONY: clean
 clean:
 	cd images && $(MAKE) clean
+	rm -rf $(BUILD_DIR)
 
 .PHONY: dev-push
 dev-push: images
